@@ -1,0 +1,180 @@
+<ul class="ipsList_reset">
+</ul>
+
+<script>
+    // Start and end schedule date overides 
+    var startOveride = '2021-01-14';
+    var endOveride = '2021-01-14';
+    // Entry point 
+    generateSchedule();
+    function generateSchedule() {
+        // Get the current date, set time to start of day, convert to UNIX seconds
+        var start = new Date(/*startOveride*/);
+        start.setMinutes(0);
+        start.setSeconds(0);
+        start.setHours(0);
+        start = Math.floor(start.getTime() / 1000);
+        // Get the current day and set time to end of day
+        var end = new Date(/*endOveride*/);
+        end.setMinutes(59);
+        end.setSeconds(59);
+        end.setHours(23);
+        end = Math.floor(end.getTime() / 1000);
+
+        // Form the request 
+
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) createScheduleFromScheduleList(JSON.parse(this.responseText));
+            if (this.readyState == 4 && this.status != 200) {
+                var scheduleItem = createItem({ title: "Couldn't get the timetable currently." }, true);
+                document.querySelector(".ipsList_reset").appendChild(scheduleItem);
+            }
+        };
+        // Form the url
+        xhttp.open("GET", "https://api.radiopanel.co/api/v1/slots?beforeDate=" + end + "&afterDate=" + start, true);
+        // Set auth headers 
+        xhttp.setRequestHeader('x-tenant', '562377c1-4d8a-41ae-aaeb-98a08a949d92');
+        xhttp.setRequestHeader('Authorization', 'Basic YTMzMjFkMTUtYzQ5MC00OGMwLTkxNTktMDMxYzM2NGUzMzgwOg==');
+        // And send
+        xhttp.send();
+    }
+    // Loops through all the schedule items and creates a corresponding schedule strcuture 
+    function createScheduleFromScheduleList(scheduleJson) {
+        document.querySelector(".ipsList_reset").innerHTML = "";
+        if(scheduleJson._embedded.length == 0) {
+            // If there are no schedule items create an items to say so append it
+            var scheduleItem = createItem({ title: "Unfortunately, there is no presenters booked for today." }, true);
+            document.querySelector(".ipsList_reset").appendChild(scheduleItem);
+            // Return from function earlier 
+            return;
+        } 
+        // Loop through all the items and create the schedule items 
+        scheduleJson._embedded.forEach(element => {
+            var scheduleItem = createItem(element);
+            document.querySelector(".ipsList_reset").appendChild(scheduleItem);
+        });
+    }
+    // Function to make an individual record from a schedule item JSON object 
+    function createItem(scheduleItem, noItems) {
+        if(noItems) {
+            // Create relevant elemets in the structure
+            var listItem = makeElement("li");
+            var holderDiv = makeElement("holderDiv");
+            var userElem = makeElement("user", "Sorry...");
+            var titleElem = makeElement("title", scheduleItem.title);
+            var timeElem = makeElement("time", "0:00 AM - 11:59 PM");
+
+            // Append them bottom up into the structure
+            holderDiv.appendChild(userElem);
+            holderDiv.appendChild(titleElem);
+            holderDiv.appendChild(timeElem);
+
+            listItem.appendChild(holderDiv);
+
+            // Exit function early
+            return listItem;
+        }
+
+        // Gets and parses all relevant data 
+        var start = makeDate(scheduleItem.start * 1000); 
+        var end = makeDate(scheduleItem.end * 1000);
+        var title = scheduleItem.title;
+        var user = scheduleItem.user.firstName + scheduleItem.user.lastName;
+        var userAvatar = scheduleItem.user.avatar;
+
+        // Create relevant elemets in the structure
+        var listItem = makeElement("li");
+        var userImage = makeElement("userImage", userAvatar);
+        var holderDiv = makeElement("holderDiv");
+        var userElem = makeElement("user", user);
+        var titleElem = makeElement("title", title);
+        var timeElem = makeElement("time", start + " - " + end);
+
+
+        // Append them bottom up into the structure
+        holderDiv.appendChild(userElem);
+        holderDiv.appendChild(titleElem);
+        holderDiv.appendChild(timeElem);
+
+        listItem.appendChild(userImage);
+        listItem.appendChild(holderDiv);
+
+        // Append to document
+        return listItem;
+    }
+
+    
+    
+    // Helper functions 
+
+    // Takes a UNIX milliseconds timestamp and transforms it to hh:mm AM/PM 
+    function makeDate(unixDate) {
+        var hours = new Date(unixDate).getHours();
+        var minutes = new Date(unixDate).getMinutes();
+        minutes = minutes < 10 ? "0" + minutes : minutes + "";
+        minutes += hours > 12 ? " PM" : " AM";
+        hours -= hours > 12 ? 12 : 0;
+        hours = hours < 10 ? "0" + hours : "" + hours;
+        return hours + ":" + minutes; 
+    }
+    // Stores all the relevant structures in a swich to store text + images
+    // Text is not always used for all elements 
+    function makeElement(elemType, text) {
+        switch(elemType) {
+            case "li":
+                var listItem = document.createElement("li");
+                listItem.setAttribute("class", "ipsSpacer_bottom c4StatusRow ipsAreaBackground_light ipsPad");
+                listItem.setAttribute("data-rowid", "i");
+                listItem.setAttribute("style", "display: flex;");
+
+                return listItem;
+            break;
+            case "userImage": 
+                var userImage = document.createElement("img");
+                userImage.setAttribute("style", "height: 4rem; margin-right: 9px; float: left; border-radius: 50%;");
+                userImage.setAttribute("src", text);
+
+                return userImage;
+            break;
+            case "holderDiv":
+                var holderDiv = document.createElement("div");
+                holderDiv.setAttribute("class", "ipsColumns ipsColumns_collapsePhone");
+                holderDiv.setAttribute("style", "float: right;");
+
+                return holderDiv;
+            break;
+            case "user":
+                var h4 = document.createElement("h4");
+                var strong = document.createElement("strong");
+                h4.setAttribute("class", "ipsType_sectionHead ipsType_break");
+                h4.appendChild(strong);
+                strong.innerHTML = text;
+
+                return h4;
+            break;
+            case "title": 
+                var title = document.createElement("div");
+                title.setAttribute("div", "ipsType_normal ipsType_break");
+                title.innerHTML = text;
+
+                return title;
+            break;
+            case "time": 
+                var outerDiv = document.createElement("div");
+                outerDiv.setAttribute("class", "ipsColumn ipsColumn_medium");
+
+                var span = document.createElement("span");
+                span.setAttribute("class", "TimeBadge badge_gradient");
+
+                var bold = document.createElement("b");
+                bold.innerHTML = text;
+
+                span.appendChild(bold);
+                outerDiv.appendChild(span);
+
+                return outerDiv;
+            break;
+        }
+    }
+</script> 
