@@ -1,10 +1,13 @@
-<ul class="ipsList_reset">
+<ul class="ipsList_reset" id="scheduleRoot">
 </ul>
 
 <script>
     // Start and end schedule date overides 
     var startOveride = '2021-01-14';
     var endOveride = '2021-01-14';
+    // Gets the parent list, and blanks out the data
+    var parentList = document.getElementById("scheduleRoot");
+    parentList.innerHTML = "";
     // Entry point 
     generateSchedule();
     function generateSchedule() {
@@ -28,21 +31,19 @@
             if (this.readyState == 4 && this.status == 200) createScheduleFromScheduleList(JSON.parse(this.responseText));
             if (this.readyState == 4 && this.status != 200) {
                 var scheduleItem = createItem({ title: "Couldn't get the timetable currently." }, true);
-                document.querySelectorAll(".ipsList_reset")[1].appendChild(scheduleItem);
+                parentList.appendChild(scheduleItem);
             }
         };
         // Form the url
         xhttp.open("GET", "https://api.radiopanel.co/api/v1/slots?beforeDate=" + end + "&afterDate=" + start, true);
         // Set auth headers 
-        xhttp.setRequestHeader('x-tenant', '');
-        xhttp.setRequestHeader('Authorization', '');
+        xhttp.setRequestHeader('x-tenant', '562377c1-4d8a-41ae-aaeb-98a08a949d92');
+        xhttp.setRequestHeader('Authorization', 'Basic YTMzMjFkMTUtYzQ5MC00OGMwLTkxNTktMDMxYzM2NGUzMzgwOg==');
         // And send
         xhttp.send();
     }
     // Loops through all the schedule items and creates a corresponding schedule strcuture 
     function createScheduleFromScheduleList(scheduleJson) {
-        var parentList = document.querySelectorAll(".ipsList_reset")[1];
-        parentList.innerHTML = "";
         if(scheduleJson._embedded.length == 0) {
             // If there are no schedule items create an items to say so append it
             var scheduleItem = createItem({ title: "Unfortunately, there is no presenters booked for today." }, true);
