@@ -28,31 +28,32 @@
             if (this.readyState == 4 && this.status == 200) createScheduleFromScheduleList(JSON.parse(this.responseText));
             if (this.readyState == 4 && this.status != 200) {
                 var scheduleItem = createItem({ title: "Couldn't get the timetable currently." }, true);
-                document.querySelector(".ipsList_reset").appendChild(scheduleItem);
+                document.querySelectorAll(".ipsList_reset")[1].appendChild(scheduleItem);
             }
         };
         // Form the url
         xhttp.open("GET", "https://api.radiopanel.co/api/v1/slots?beforeDate=" + end + "&afterDate=" + start, true);
         // Set auth headers 
-        xhttp.setRequestHeader('x-tenant', '562377c1-4d8a-41ae-aaeb-98a08a949d92');
-        xhttp.setRequestHeader('Authorization', 'Basic YTMzMjFkMTUtYzQ5MC00OGMwLTkxNTktMDMxYzM2NGUzMzgwOg==');
+        xhttp.setRequestHeader('x-tenant', '');
+        xhttp.setRequestHeader('Authorization', '');
         // And send
         xhttp.send();
     }
     // Loops through all the schedule items and creates a corresponding schedule strcuture 
     function createScheduleFromScheduleList(scheduleJson) {
-        document.querySelector(".ipsList_reset").innerHTML = "";
+        var parentList = document.querySelectorAll(".ipsList_reset")[1];
+        parentList.innerHTML = "";
         if(scheduleJson._embedded.length == 0) {
             // If there are no schedule items create an items to say so append it
             var scheduleItem = createItem({ title: "Unfortunately, there is no presenters booked for today." }, true);
-            document.querySelector(".ipsList_reset").appendChild(scheduleItem);
+            parentList.appendChild(scheduleItem);
             // Return from function earlier 
             return;
         } 
         // Loop through all the items and create the schedule items 
         scheduleJson._embedded.forEach(element => {
             var scheduleItem = createItem(element);
-            document.querySelector(".ipsList_reset").appendChild(scheduleItem);
+            parentList.appendChild(scheduleItem);
         });
     }
     // Function to make an individual record from a schedule item JSON object 
